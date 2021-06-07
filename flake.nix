@@ -16,17 +16,22 @@
       pkgsFor = system: nixpkgs.legacyPackages.${system};
       pkgs = pkgsFor "x86_64-linux";
     in {
+      nixosConfigurations.pi = nixpkgs.lib.nixosSystem {
+        system = "aarch64-linux";
+        modules = [ (import ./pi.nix) ];
+      };
       nixopsConfigurations.default = {
         inherit nixpkgs;
         network.description = domain;
         network.nixpkgs = pkgs;
-        webserver = { ... }: {
-          deployment.targetEnv = "libvirtd";
-          services.lighttpd = {
-            enable = true;
-            cgit.enable = true;
-          };
-          networking.firewall.allowedTCPPorts = [ 80 443 ];
+        gitServer = { lib, pkgs, ... }: {
+          imports = [
+            ./hardware/pi.nix
+            ./modules/ddns.nix
+            ./modules/git.oakes.family.nix
+          ];
+
+          deployment.targetHost = "192.168.0.3";
         };
       };
 
